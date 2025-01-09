@@ -161,7 +161,7 @@
         try {
             document.getElementById('calendar-container').innerText = 'Loading calendar...';
             console.log(`https://cors-anywhere.herokuapp.com/https://www.tanzschulechris.at/kalender_programm?tx_chilijsondata_chilijsondata%5Baction%5D=show&tx_chilijsondata_chilijsondata%5Bcontroller%5D=Sources&tx_chilijsondata_chilijsondata%5BfromAction%5D=search&tx_chilijsondata_chilijsondata%5BselectedLocation%5D=${location}&tx_chilijsondata_chilijsondata%5BselectedType%5D=${type}&tx_chilijsondata_chilijsondata%5BselectedWeek%5D=${week}`);
-            const response = await fetch(`https://cors-anywhere.herokuapp.com/https://www.tanzschulechris.at/kalender_programm?tx_chilijsondata_chilijsondata%5Baction%5D=show&tx_chilijsondata_chilijsondata%5Bcontroller%5D=Sources&tx_chilijsondata_chilijsondata%5BfromAction%5D=search&tx_chilijsondata_chilijsondata%5BselectedLocation%5D=${location}&tx_chilijsondata_chilijsondata%5BselectedType%5D=${type}&tx_chilijsondata_chilijsondata%5BselectedWeek%5D=${week}`);
+            const response = await fetch(`https://corsproxy.io/?url=https://www.tanzschulechris.at/kalender_programm?tx_chilijsondata_chilijsondata%5Baction%5D=show&tx_chilijsondata_chilijsondata%5Bcontroller%5D=Sources&tx_chilijsondata_chilijsondata%5BfromAction%5D=search&tx_chilijsondata_chilijsondata%5BselectedLocation%5D=${location}&tx_chilijsondata_chilijsondata%5BselectedType%5D=${type}&tx_chilijsondata_chilijsondata%5BselectedWeek%5D=${week}`);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
