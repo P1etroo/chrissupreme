@@ -198,23 +198,25 @@
         const dayHeaders = document.querySelectorAll('.day-header');
 
         const allButton = document.createElement('button');
-        allButton.textContent = 'Show All';
+        allButton.textContent = 'Hide All';
         allButton.classList.add('collapse-btn');
         const allToggle = () => {
-            if (allButton.textContent == 'Show All') {
+            if (allButton.textContent === 'Show All') {
                 allButton.textContent = 'Hide All';
                 btns.forEach(btn => {
-                    if (btn.textContent == 'Show') {
+                    if (btn.textContent === 'Show') {
                         btn.click();
                     }
                 });
+                localStorage.removeItem('hideall');
             } else {
                 allButton.textContent = 'Show All';
                 btns.forEach(btn => {
-                    if (btn.textContent == 'Hide') {
+                    if (btn.textContent === 'Hide') {
                         btn.click();
                     }
                 });
+                localStorage.setItem('hideall', '1');
             }
 
         };
@@ -238,7 +240,7 @@
 
             const toggleCollapse = () => {
                 let sibling = dayHeader.nextElementSibling;
-                toggleButton.textContent = toggleButton.textContent != 'Hide' ? 'Hide' : 'Show';
+                toggleButton.textContent = toggleButton.textContent !== 'Hide' ? 'Hide' : 'Show';
 
                 // Loop through the following siblings
                 while (sibling && sibling.classList.contains('course')) {
@@ -249,10 +251,13 @@
 
             // Attach click event to toggle visibility of "course" entries
             toggleButton.addEventListener('click', toggleCollapse);
-            toggleCollapse();
             btns.push(toggleButton);
         });
+        if (localStorage.getItem('hideall')){
+            allButton.click();
+        } else {
 
+        }
     }
 
     // Fetch calendar when the page loads
