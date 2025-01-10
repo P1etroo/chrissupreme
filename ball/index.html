@@ -88,6 +88,14 @@
             margin-left: auto; /* Anchors the second element to the center */
         }
 
+        .hide1 {
+            display: none;
+        }
+
+        .hide2 {
+            display: none;
+        }
+
 
         .collapse-btn {
             background-color: #f39200;
@@ -148,6 +156,10 @@
 <h1>Chris Ball Kalender</h1>
 <div class="center-container">
     <button class="collapse-btn" onclick="window.location.href = '/'">Zu Kursterminen wechseln</button>
+    <label>
+        <input type="checkbox" id="checkBtn" onclick="updateCheckbox(this.checked)" value="true">
+        Vergangene Termine Ausblenden
+    </label>
     <button class="collapse-btn" id="hideall">Hide All</button>
 </div>
 <div id="calendar-container">
@@ -158,6 +170,66 @@
 
     const btns = [];
 
+
+    function updateCheckbox(checked) {
+        if (checked) {
+            localStorage.setItem('checked', '1');
+        } else {
+            localStorage.removeItem('checked');
+        }
+
+        if (checked) {
+
+           //// hide all past entries
+           Array.from(document.querySelectorAll('.filtered-section')).forEach(sec => {
+               let visible = false;
+               Array.from(sec.querySelectorAll('.row-entry')).forEach(row => {
+                    if (!isCurrentTimeLessThanEnd(row.querySelector('p').innerText)){
+                        row.classList.add('hide2');
+                    } else {
+                        visible = true;
+                    }
+               });
+
+               // hide full section
+               if (!visible) {
+                   sec.classList.add('hide2');
+               }
+           })
+        } else {
+            Array.from(document.querySelectorAll('.hide2')).forEach(
+                elem => elem.classList.remove('hide2')
+            )
+        }
+    }
+
+    // tries to determine target time in format [...]dd.mm.yy[...]hh:mm[...]hh:mm
+    function isCurrentTimeLessThanEnd(input) {
+        // Extract date and time using regex
+        const match = input.match(/\D*(\d{2}\.\d{2}\.\d{2})\D*((\d{2}:\d{2})\D*(\d{2}:\d{2}))?\D*/);
+        if (!match) {
+            return true;
+        }
+
+        // Parse the extracted parts
+        const [_0, datePart,_1,_2, end] = match;
+
+        // Parse the date
+        const [day, month, year] = datePart.split('.').map(Number);
+        const fullYear = year + 2000; // Assuming 21st century (e.g., 24 becomes 2024)
+
+        // Parse the end time
+        const [endHour, endMinute] = (end?end:'23:59').split(':').map(Number);
+
+        // Create a Date object for the end time
+        const endTime = new Date(fullYear, month - 1, day, endHour, endMinute);
+
+        // Get the current time
+        const now = new Date();
+
+        // Compare the current time with the end time
+        return now < endTime;
+    }
     async function fetchCalendar() {
         try {
             document.getElementById('calendar-container').innerText = 'Loading calendar...';
@@ -237,6 +309,11 @@
             if (containers.length > 0) {
                 calendarContainer.innerHTML = resultContainer.outerHTML;
                 addCollapseFeature();
+
+                // update check button for refresh
+                document.getElementById('checkBtn').checked = !!localStorage.getItem('checked');
+                updateCheckbox(!!localStorage.getItem('checked'));
+
             } else {
                 calendarContainer.textContent = 'Calendar not found in the response. This should not happen. This site for sure correctly works on Chrome and Firefox, maybe switch to other browser?';
             }
@@ -290,12 +367,21 @@
 
             const toggleCollapse = () => {
                 let sibling = dayHeader.nextElementSibling;
-                toggleButton.textContent = toggleButton.textContent !== 'Hide' ? 'Hide' : 'Show';
 
-                // Loop through the following siblings
-                while (sibling && sibling.classList.contains('top')) {
-                    sibling.style.display = sibling.style.display === 'none' ? '' : 'none';
-                    sibling = sibling.nextElementSibling;
+                if (toggleButton.textContent === 'Hide') {
+                    toggleButton.textContent = 'Show';
+                    // Loop through the following siblings
+                    while (sibling && sibling.classList.contains('top')) {
+                        sibling.classList.add('hide1');
+                        sibling = sibling.nextElementSibling;
+                    }
+                } else {
+                    toggleButton.textContent = 'Hide';
+                    // Loop through the following siblings
+                    while (sibling && sibling.classList.contains('top')) {
+                        sibling.classList.remove('hide1');
+                        sibling = sibling.nextElementSibling;
+                    }
                 }
             }
 
