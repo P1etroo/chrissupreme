@@ -123,6 +123,7 @@
             margin: 8px 0; /* Add spacing between buttons */
             height: 32px;
         }
+
         .hidden-content {
             display: none;
         }
@@ -142,7 +143,6 @@
         .filter-item {
             margin-bottom: 10px;
         }
-
 
 
         label {
@@ -180,22 +180,22 @@
 
         if (checked) {
 
-           //// hide all past entries
-           Array.from(document.querySelectorAll('.filtered-section')).forEach(sec => {
-               let visible = false;
-               Array.from(sec.querySelectorAll('.row-entry')).forEach(row => {
-                    if (!isCurrentTimeLessThanEnd(row.querySelector('p').innerText)){
+            // hide all past entries
+            Array.from(document.querySelectorAll('.filtered-section')).forEach(sec => {
+                let visible = false;
+                Array.from(sec.querySelectorAll('.row-entry')).forEach(row => {
+                    if (!isCurrentTimeLessThanEnd(row.querySelector('p').innerText)) {
                         row.classList.add('hide2');
                     } else {
                         visible = true;
                     }
-               });
+                });
 
-               // hide full section
-               if (!visible) {
-                   sec.classList.add('hide2');
-               }
-           })
+                // hide full section
+                if (!visible) {
+                    sec.classList.add('hide2');
+                }
+            })
         } else {
             Array.from(document.querySelectorAll('.hide2')).forEach(
                 elem => elem.classList.remove('hide2')
@@ -203,23 +203,23 @@
         }
     }
 
-    // tries to determine target time in format [...]dd.mm.yy[...]hh:mm[...]hh:mm
+    // tries to determine target time in format [...]dd.mm.yy[yy][...]hh:mm[...]hh:mm
     function isCurrentTimeLessThanEnd(input) {
         // Extract date and time using regex
-        const match = input.match(/\D*(\d{2}\.\d{2}\.\d{2})\D*((\d{2}:\d{2})\D*(\d{2}:\d{2}))?\D*/);
+        const match = input.match(/\D*(\d{2}\.\d{2}\.\d{2,4})\D*((\d{2}:\d{2})\D*(\d{2}:\d{2}))?\D*/);
         if (!match) {
             return true;
         }
 
         // Parse the extracted parts
-        const [_0, datePart,_1,start, end] = match;
+        const [_0, datePart, _1, start, end] = match;
 
         // Parse the date
         const [day, month, year] = datePart.split('.').map(Number);
-        const fullYear = year + 2000; // Assuming 21st century (e.g., 24 becomes 2024)
+        const fullYear = year < 100 ? (year + 2000) : year; // Assuming 21st century (e.g., 24 becomes 2024)
 
         // Parse the end time
-        const [endHour, endMinute] = (end?end:(start?start:'23:59')).split(':').map(Number);
+        const [endHour, endMinute] = (end ? end : (start ? start : '23:59')).split(':').map(Number);
 
         // Create a Date object for the end time
         const endTime = new Date(fullYear, month - 1, day, endHour, endMinute);
@@ -230,26 +230,67 @@
         // Compare the current time with the end time
         return now < endTime;
     }
+
     async function fetchCalendar() {
         try {
             document.getElementById('calendar-container').innerText = 'Loading calendar...';
-            const response = await fetch(`https://corsproxy.io/?url=${encodeURIComponent("https://www.tanzschulechris.at/events/baelle/ballproben")}`);
+            const responseProben = await fetch(`https://corsproxy.io/?url=${encodeURIComponent("https://www.tanzschulechris.at/events/baelle/ballproben")}`);
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
+            if (!responseProben.ok) {
+                throw new Error(`HTTP error! Status: ${responseProben.status}`);
             }
 
-            const htmlText = await response.text();
+            const htmlTextProben = await responseProben.text();
             const parser = new DOMParser();
-            const doc = parser.parseFromString(htmlText, 'text/html');
+            const docProben = parser.parseFromString(htmlTextProben, 'text/html');
             // Find all containers with the "container default" class
-            const containers = doc.querySelectorAll(".container.default");
+            const containersProben = docProben.querySelectorAll(".container.default");
+
+            const responseBaelle = await fetch(`https://corsproxy.io/?url=${encodeURIComponent("https://www.tanzschulechris.at/events/baelle")}`);
+
+            if (!responseBaelle.ok) {
+                throw new Error(`HTTP error! Status: ${responseProben.status}`);
+            }
+            const htmlText2 = await responseBaelle.text();
+            const docBaelle = parser.parseFromString(htmlText2, 'text/html');
+            const ballEntries = docBaelle.querySelectorAll(".news-text-wrap > .header");
 
             // Create a result container
             const resultContainer = document.createElement("div");
 
-            // Iterate through each container
-            containers.forEach((container) => {
+
+            //baelle
+            const section = document.createElement("div");
+            section.className = "filtered-section";
+            const headerElement = document.createElement("div");
+            const name = document.createElement("p");
+            headerElement.classList.add('day-header');
+            name.textContent = 'Bälle';
+            headerElement.appendChild(name);
+            section.appendChild(headerElement);
+            ballEntries.forEach((entry) => {
+                // Create a container for the row
+                const topItem = document.createElement("div");
+                topItem.classList.add('top');
+                const listItem = document.createElement("div");
+                listItem.className = "row-entry";
+
+
+                const paragraph1 = document.createElement("p");
+                const paragraph2 = document.createElement("p");
+                paragraph1.textContent = entry.querySelector('time').textContent.trim();
+                paragraph2.textContent = entry.querySelector('h3 > a').textContent.trim();
+                listItem.appendChild(paragraph1);
+                listItem.appendChild(paragraph2);
+                // Append the row entry to the section
+                topItem.appendChild(listItem)
+                section.appendChild(topItem);
+                resultContainer.appendChild(section);
+            });
+
+
+            // proben
+            containersProben.forEach((container) => {
                 // Check if there are any <tr> elements inside this container
                 const rows = container.querySelectorAll("tr");
                 if (rows.length > 0) {
@@ -306,7 +347,7 @@
             });
 
             const calendarContainer = document.getElementById('calendar-container');
-            if (containers.length > 0) {
+            if (containersProben.length > 0) {
                 calendarContainer.innerHTML = resultContainer.outerHTML;
                 addCollapseFeature();
 
