@@ -43,7 +43,6 @@
         }
 
         #calendar > div > div {
-            display: block;
             padding: 8px;
             border-bottom: 1px solid #ddd;
         }
@@ -57,10 +56,11 @@
         }
 
         .center-container {
-            padding-top: 12px;
+            padding: 12px;
             display: flex;
+            flex-direction: column; /* Stack items vertically */
             justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically, if needed */
+            align-items: center; /* Center horizontally */
         }
 
         .course > p {
@@ -118,6 +118,20 @@
             display: none;
         }
 
+        .empty {
+            display: none;
+        !important;
+        }
+
+        .hide1 {
+            display: none;
+        }
+
+        .hide2 {
+            display: none;
+        }
+
+
         select, input[type="button"] {
             padding: 8px;
             margin: 5px 0;
@@ -145,6 +159,10 @@
 <h1>Chris Kurs Kalendar</h1>
 <div class="center-container">
     <button class="collapse-btn" onclick="window.location.href = '/ball'">Zu Ballproben wechseln</button>
+    <label>
+        <input type="checkbox" id="checkBtn" onclick="updateCheckbox(this.checked)" value="true">
+        Vergangene Termine Ausblenden
+    </label>
 </div>
 <div id="calendar-container">
     Loading calendar...
@@ -153,6 +171,43 @@
 <script>
 
     const btns = [];
+    let wn = ('0' + getWeekNumber(new Date())).slice(-2);
+
+    function getReverseIndexDayOfWeek() {
+        const date = new Date(); // Get the current date
+        const day = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        return day === 0 ? -1 : (day - 8); // Map Sunday to -1, Monday to -7, etc.
+    }
+
+    function updateCheckbox(checked) {
+        if (checked) {
+            localStorage.setItem('checked', '1');
+        } else {
+            localStorage.removeItem('checked');
+        }
+
+        // if current week selected
+        if (('0' + getWeekNumber(new Date())).slice(-2) === wn) {
+            if (checked) {
+
+                // hide all days before today
+                Array.from(document.querySelectorAll('.day')).slice(0, getReverseIndexDayOfWeek()).forEach(p => p.classList.add('hide2'));
+
+                // hide all previous courses of today
+                Array.from(Array.from(document.querySelectorAll('.day')).at(getReverseIndexDayOfWeek()).querySelectorAll('.course')).forEach(
+                    todayCourse => {
+                        if (!isCurrentTimeLessThanEnd(todayCourse.querySelector('.time').innerText)) {
+                            todayCourse.classList.add('hide2');
+                        }
+                    }
+                );
+            } else {
+                Array.from(document.querySelectorAll('.hide2')).forEach(
+                    elem => elem.classList.remove('hide2')
+                )
+            }
+        }
+    }
 
     function getWeekNumber(d) {
         // Copy date so don't modify original
@@ -169,6 +224,7 @@
     }
 
     async function fetchCalendar(location, week, type) {
+        wn = week;
         try {
             document.getElementById('calendar-container').innerText = 'Loading calendar...';
             const response = await fetch(`https://corsproxy.io/?url=${encodeURIComponent(`https://www.tanzschulechris.at/kalender_programm?tx_chilijsondata_chilijsondata%5Baction%5D=show&tx_chilijsondata_chilijsondata%5Bcontroller%5D=Sources&tx_chilijsondata_chilijsondata%5BfromAction%5D=search&tx_chilijsondata_chilijsondata%5BselectedLocation%5D=${location}&tx_chilijsondata_chilijsondata%5BselectedType%5D=${type}&tx_chilijsondata_chilijsondata%5BselectedWeek%5D=${week}`)}`);
@@ -192,6 +248,10 @@
                 const btn = [...document.querySelectorAll('form > div > input')].filter(e => e.value === 'Suchen')[0];
                 btn.type = 'button';
                 btn.addEventListener('click', () => fetchCalendar(document.getElementById('location').value, document.getElementById('calendarweek').value, document.getElementById('type').value));
+
+                // update check button for refresh
+                document.getElementById('checkBtn').checked = !!localStorage.getItem('checked');
+                updateCheckbox(!!localStorage.getItem('checked'));
 
             } else {
                 calendarContainer.textContent = 'Calendar not found in the response. This should not happen. This site for sure correctly works on Chrome and Firefox, maybe switch to other browser?';
@@ -249,12 +309,21 @@
 
             const toggleCollapse = () => {
                 let sibling = dayHeader.nextElementSibling;
-                toggleButton.textContent = toggleButton.textContent !== 'Hide' ? 'Hide' : 'Show';
 
-                // Loop through the following siblings
-                while (sibling && sibling.classList.contains('course')) {
-                    sibling.style.display = sibling.style.display === 'none' ? '' : 'none';
-                    sibling = sibling.nextElementSibling;
+                if (toggleButton.textContent === 'Hide') {
+                    toggleButton.textContent = 'Show';
+                    // Loop through the following siblings
+                    while (sibling && sibling.classList.contains('course')) {
+                        sibling.classList.add('hide1');
+                        sibling = sibling.nextElementSibling;
+                    }
+                } else {
+                    toggleButton.textContent = 'Hide';
+                    // Loop through the following siblings
+                    while (sibling && sibling.classList.contains('course')) {
+                        sibling.classList.remove('hide1');
+                        sibling = sibling.nextElementSibling;
+                    }
                 }
             }
 
@@ -262,15 +331,30 @@
             toggleButton.addEventListener('click', toggleCollapse);
             btns.push(toggleButton);
         });
-        if (localStorage.getItem('hideall')){
+        if (localStorage.getItem('hideall')) {
             allButton.click();
         } else {
 
         }
     }
 
+    function isCurrentTimeLessThanEnd(timeframe) {
+        // Split the timeframe into start and end times
+        const [start, end] = timeframe.split(" - ");
+
+        // Get the current time
+        const now = new Date();
+
+        // Parse the end time
+        const [endHour, endMinute] = end.split(":").map(Number);
+        const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute);
+
+        // Compare the current time with the end time
+        return now < endTime;
+    }
+
     // Fetch calendar when the page loads
-    fetchCalendar('3', ('0' + getWeekNumber(new Date())).slice(-2), '');
+    fetchCalendar('3', wn, '');
 
 
 </script>
