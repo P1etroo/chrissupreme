@@ -22,14 +22,14 @@
             padding: 15px;
         }
 
-        .filtered-section {
-            padding-left: 33px;
-            padding-right: 33px;
+        #calendar-container {
+            padding: 15px;
         }
 
-        .filtered-section > .day-header {
-            padding-left: 3px;
-            padding-right: 3px;
+        .filtered-section {
+            padding: 0 18px;
+            background: white;
+            padding-bottom: 10px;
         }
 
         /* Styles for calendar */
@@ -40,13 +40,13 @@
             margin: 10px 0;
         }
 
-        .filtered-section > div {
+        .filtered-section > div > div {
             padding: 10px;
             background-color: #ffffff;
             text-align: center;
         }
 
-        .filtered-section > div > div {
+        .filtered-section > div > div > div {
             display: block;
             padding: 8px;
         }
@@ -88,10 +88,6 @@
             margin-left: auto; /* Anchors the second element to the center */
         }
 
-        #day-headers {
-            display: none !important; /* Ensure day headers are hidden and take no space */
-        }
-
 
         .collapse-btn {
             background-color: #f39200;
@@ -100,6 +96,7 @@
             border-radius: 4px;
             padding: 5px 10px;
             cursor: pointer;
+            margin: auto;
         }
 
         .collapse-btn:hover {
@@ -205,6 +202,8 @@
 
                     rows.forEach((row) => {
                         // Create a container for the row
+                        const topItem = document.createElement("div");
+                        topItem.classList.add('top');
                         const listItem = document.createElement("div");
                         listItem.className = "row-entry";
 
@@ -223,7 +222,8 @@
 
                         });
                         // Append the row entry to the section
-                        section.appendChild(listItem);
+                        topItem.appendChild(listItem)
+                        section.appendChild(topItem);
                     });
 
 
@@ -293,7 +293,7 @@
                 toggleButton.textContent = toggleButton.textContent !== 'Hide' ? 'Hide' : 'Show';
 
                 // Loop through the following siblings
-                while (sibling && sibling.classList.contains('row-entry')) {
+                while (sibling && sibling.classList.contains('top')) {
                     sibling.style.display = sibling.style.display === 'none' ? '' : 'none';
                     sibling = sibling.nextElementSibling;
                 }
