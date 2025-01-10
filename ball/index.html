@@ -210,16 +210,17 @@
         if (!match) {
             return true;
         }
+        console.info(match);
 
         // Parse the extracted parts
-        const [_0, datePart,_1,_2, end] = match;
+        const [_0, datePart,_1,start, end] = match;
 
         // Parse the date
         const [day, month, year] = datePart.split('.').map(Number);
         const fullYear = year + 2000; // Assuming 21st century (e.g., 24 becomes 2024)
 
         // Parse the end time
-        const [endHour, endMinute] = (end?end:'23:59').split(':').map(Number);
+        const [endHour, endMinute] = (end?end:(start?start:'23:59')).split(':').map(Number);
 
         // Create a Date object for the end time
         const endTime = new Date(fullYear, month - 1, day, endHour, endMinute);
